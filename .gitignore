@@ -1,0 +1,16 @@
+node_modules/
+.expo/
+.expo-shared/
+web-build/
+dist/
+.metro-cache/
+metro.config.js.lock
+ios/build/
+android/build/
+android/app/build/
+.DS_Store
+.env
+.env.local
+.env.*.local
+*.tsbuildinfo
+.vscode/
