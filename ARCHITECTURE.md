@@ -34,7 +34,7 @@
 
 ## Компоненты
 
-### HexMesh Server (`server/index.js`)
+### MeshLink Server (`server/index.js`)
 
 Лёгкий Node.js WebSocket сервер. Выполняет три функции:
 
