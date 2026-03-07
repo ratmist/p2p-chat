@@ -2,7 +2,7 @@
 
 ## Обзорная таблица
 
-| | **HexMesh** | **Signal** | **Briar** | **Meshtastic** | **Matrix / Element** |
+| | **MeshLink** | **Signal** | **Briar** | **Meshtastic** | **Matrix / Element** |
 |---|---|---|---|---|---|
 | **Без интернета** | ✅ LAN Wi-Fi | ❌ нужен сервер | ✅ BT/Wi-Fi Direct | ✅ LoRa/радио | ❌ нужен homeserver |
 | **P2P (нет центр. сервера)** | ✅ | ❌ сервера Signal | ✅ | ✅ | ❌ |
