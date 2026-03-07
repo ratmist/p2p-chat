@@ -47,12 +47,6 @@ http://192.168.x.x:8081        # разработка
 https://192.168.x.x:3002       # для микрофона на iOS Safari
 ```
 
-### 3. Мобильное приложение (Expo)
-
-```bash
-npx eas build --profile development --platform ios
-npx eas build --profile development --platform android
-```
 
 > **Safari / iOS:** микрофон и камера требуют HTTPS. Используйте порт 3002 с сертификатом из `server/.certs/`.
 
