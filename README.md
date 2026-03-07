@@ -1,225 +1,190 @@
-# 🔗 HexMesh — Decentralized P2P Mesh Communication
+# HexMesh — Децентрализованная система связи
 
-> Encrypted. Decentralized. No internet required.
+> Текстовые сообщения · Передача файлов · Голос/видео · Работает без интернета
 
-[![Platform](https://img.shields.io/badge/platform-Android%20%7C%20iOS%20%7C%20Web-blue)]()
-[![Transport](https://img.shields.io/badge/transport-WebRTC%20%2B%20WebSocket-cyan)]()
-[![Encryption](https://img.shields.io/badge/encryption-Ed25519%20%2B%20AES--256--GCM-green)]()
-
----
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        HexMesh Network                          │
-│                                                                 │
-│  [Node A] ◄──WebRTC DataChannel──► [Node B]                   │
-│      │                                   │                      │
-│      └────── relay via [Node C] ─────────┘                     │
-│                                                                 │
-│  Discovery:  WebSocket signaling server (LAN)                   │
-│  P2P:        WebRTC DataChannel (DTLS encrypted)                │
-│  Fallback:   Server relay with TTL=7 multihop                   │
-│  Voice:      WebRTC MediaStream + Opus codec                    │
-│  Files:      64KB chunks + SHA-256 + ACK + resume              │
-│  Identity:   Ed25519 keypair per node                          │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Packet Format
-
-```typescript
-{
-  id: string;       // UUID v4 — deduplication
-  type: string;     // MSG | FILE_CHUNK | FILE_META | ACK | VOICE | ...
-  from: string;     // Ed25519 public key fingerprint (node identity)
-  to: string;       // target nodeId or 'broadcast'
-  ttl: number;      // 0–7, decremented each hop (loop prevention)
-  visited: string[]; // hop trail (loop prevention)
-  payload: unknown; // type-specific data
-  sig?: string;     // Ed25519 signature from 'from'
-  ts: number;       // unix timestamp ms
-}
-```
-
-### Routing Algorithm
-
-1. **Direct WebRTC** — if DataChannel to `to` is open, deliver immediately
-2. **Signaling relay** — if no direct channel, server forwards to known node
-3. **Multihop flood** — if target unreachable locally, forward to all non-visited peers with TTL-1
-4. **Loop prevention** — `visited[]` array + `seenPackets` Set on server
-5. **Deduplication** — `id` checked before processing on every node
+[![Platform](https://img.shields.io/badge/platform-Web%20%7C%20iOS%20%7C%20Android-blue)](#)
+[![E2E](https://img.shields.io/badge/E2E-ECDH%20P--256%20%2B%20AES--GCM--256-green)](#)
+[![Transport](https://img.shields.io/badge/transport-WebRTC%20DataChannel-cyan)](#)
 
 ---
 
-## Quick Start
+## Что это
 
-### 1. Start signaling server
+MeshLink — P2P mesh-сеть для обмена сообщениями, файлами и звонками в локальной Wi-Fi сети. Работает **без интернета** и **без облаков**: единственный компонент инфраструктуры — лёгкий WebSocket-сервер для первоначального обнаружения узлов, который запускается прямо на устройстве в сети.
+
+После обнаружения все данные передаются напрямую между устройствами по WebRTC DataChannel. Если прямой P2P невозможен — используется мультихоп через другие узлы сети.
+
+---
+
+## Быстрый старт
+
+### Требования
+
+- Node.js ≥ 18
+- Все устройства в одной Wi-Fi сети
+
+### 1. Запустить сервер
 
 ```bash
 cd server
+node index.js
+```
+
+Сервер поднимается на двух портах:
+- `ws://0.0.0.0:3001` — WebSocket (HTTP)
+- `wss://0.0.0.0:3002` — WebSocket + TLS (нужен для микрофона/камеры в Safari)
+
+### 2. Открыть клиент
+
+```bash
 npm install
-npm start
-# → listening on :8080
-# → GET /health  → { status, nodes, uptime }
-# → GET /nodes   → active node list
+npx expo start --web
 ```
 
-### 2. Start the app (web)
-
-```bash
-cd ..   # project root (Expo project)
-npm install
-npm run start
-# or: npx expo start --web
+На любом устройстве в сети открыть в браузере:
+```
+http://192.168.x.x:8081        # разработка
+https://192.168.x.x:3002       # для микрофона на iOS Safari
 ```
 
-### 3. On mobile (LAN)
+### 3. Мобильное приложение (Expo)
 
 ```bash
-# Edit client/src/hooks/useMesh.ts → SIGNALING_URL
-# Set to ws://<your-computer-LAN-IP>:8080
-npx expo start
-# Scan QR with Expo Go
+npx eas build --profile development --platform ios
+npx eas build --profile development --platform android
 ```
 
-### 4. Android APK build
+> **Safari / iOS:** микрофон и камера требуют HTTPS. Используйте порт 3002 с сертификатом из `server/.certs/`.
 
-```bash
-eas build -p android --profile preview-apk
+---
+
+## Структура проекта
+
+```
+server/
+  index.js                     # Signaling + relay сервер (Node.js + ws)
+  .certs/                      # TLS сертификаты для HTTPS/WSS
+
+src/
+  MeshContext.tsx               # Весь mesh-стек: WebRTC, routing, crypto, файлы, звонки
+  lib/
+    crypto.ts                  # ECDH, Ed25519, AES-GCM примитивы
+    MeshClient.ts              # Низкоуровневый клиент
+    INTEGRATION.ts             # Гайд по подключению к UI
+  components/
+    ChatScreen.web.tsx          # Чат
+    CallScreen.web.tsx          # Звонки
+    DeviceDiscoveryScreen.web.tsx
+    FileTransferScreen.web.tsx
+    GroupChatScreen.web.tsx
+    SettingsScreen.web.tsx
+  hooks/
+    useMesh.ts                 # React hooks для подключения к mesh
 ```
 
 ---
 
-## Feature Matrix
+## Ключевые характеристики
 
-| Feature | Status | Notes |
-|---|---|---|
-| Node discovery | ✅ | WebSocket NODE_LIST + NODE_JOINED events |
-| P2P session (WebRTC) | ✅ | OFFER/ANSWER/ICE via signaling |
-| Text messages | ✅ | DataChannel + ACK + retry (5x exp backoff) |
-| Multihop relay | ✅ | TTL=7 flood with visited[] dedup |
-| File transfer | ✅ | 64KB chunks + SHA-256 + resume |
-| Voice calls | ✅ | WebRTC MediaStream, Opus |
-| Video calls | ✅ | WebRTC MediaStream |
-| E2E encryption | ✅ | DTLS (WebRTC) + Ed25519 identity |
-| Rate limiting | ✅ | 60 pkt/s per node on relay |
-| Offline queue | ✅ | IndexedDB-backed retry queue |
-| Store & Forward | ✅ | Settings toggle per node |
-| Group chat | 🔜 | Broadcast packet to all peers |
-| BLE fallback | 🔜 | Architecture designed, native plugin needed |
-
----
-
-## Protocols
-
-### Message delivery guarantee
-
-```
-Sender                     Receiver
-  │── MSG (id=abc) ──────────► │
-  │                            │── ACK (payload=abc) ──► │
-  │   [if no ACK in 500ms]     │
-  │── MSG retry #1 ───────────► │
-  │   [if no ACK in 1000ms]    │
-  │── MSG retry #2 ───────────► │
-  │   [max 5 retries, exp backoff]
-```
-
-### File transfer
-
-```
-Sender                          Receiver
-  │── FILE_META (sha256, size) ──► │
-  │── FILE_CHUNK #0 (64KB) ──────► │──► FILE_ACK #0
-  │── FILE_CHUNK #1 (64KB) ──────► │──► FILE_ACK #1
-  │   ... (throttled: 8 chunks     │
-  │       then 10ms delay)         │
-  │── FILE_CHUNK #N ─────────────► │
-                                   │ verify SHA-256
-                                   │ emit 'file:done' | 'file:integrity:fail'
-```
-
-### Multihop chain
-
-```
-A ──► B ──► C ──► D
-     TTL=6   TTL=5   TTL=4
-     visited=[A] visited=[A,B] visited=[A,B,C]
-```
-
----
-
-## Security Model
-
-| Threat | Mitigation |
+| Параметр | Значение |
 |---|---|
-| Impersonation | Ed25519 keypair, fingerprint in Settings |
-| Eavesdropping | DTLS (WebRTC) + AES-256-GCM for messages |
-| Packet replay | UUID deduplication, timestamp check |
-| Relay flooding | Rate limit: 60 pkt/s/node on server |
-| Node ID hijack | Server rejects REGISTER if nodeId already active on different socket |
-| Man-in-middle | Public key fingerprint shown in UI (Signal-style safety numbers) |
+| Задержка P2P (LAN) | 5–30 мс |
+| Задержка через relay | 30–80 мс |
+| Макс. TTL (хопы) | 7 |
+| Размер чанка файла | 48 KB |
+| Параллельных чанков | 4 |
+| Макс. размер файла | 256 MB |
+| Пропускная способность файлов | до 2 MB/s |
+| Шифрование | AES-GCM-256 (E2E) |
+| Подпись пакетов | ECDSA P-256 + SHA-256 |
+| Аудиокодек | Opus + in-band FEC |
+| ICE timeout | 15 сек (с TURN fallback) |
 
 ---
 
-## Metrics & Diagnostics
+## Обнаружение узлов
 
-```bash
-# Live health check
-curl http://localhost:8080/health
+Используется двухуровневый механизм:
 
-# Example response:
+1. **WebSocket регистрация** — клиент подключается к известному IP сервера, отправляет `REGISTER`, получает `NODE_LIST`. Подходит для случаев когда адрес сервера известен.
+
+2. **mDNS UDP multicast** — сервер рассылает объявления на `224.0.0.251:5354`. Несколько серверов в одной сети автоматически формируют федерацию и обмениваются списками узлов.
+
+После получения `NODE_LIST` каждый клиент сразу инициирует WebRTC DataChannel (`DC_OFFER`) со всеми известными узлами — формируется полносвязная mesh.
+
+---
+
+## P2P соединение
+
+Используется WebRTC DataChannel с ordered/reliable доставкой. Конфигурация ICE:
+
+```
+STUN: stun.l.google.com:19302, stun1.l.google.com:19302, stun.cloudflare.com:3478
+TURN: openrelay.metered.ca (UDP/TCP/TLS), a.relay.metered.ca (UDP/TCP/TLS)
+```
+
+`bundlePolicy: "max-bundle"` — объединяет DataChannel и медиа-треки в один ICE компонент. Критично для iOS Safari, где раздельные ICE компоненты могут зависать.
+
+При `ICE_TIMEOUT = 15 сек` без установки соединения — автоматический рестарт с `iceTransportPolicy: "relay"` (только TURN).
+
+---
+
+## Маршрутизация
+
+Приоритет при отправке пакета:
+
+1. **Прямой DataChannel** — если открыт
+2. **Distance-vector таблица** — известный следующий хоп через `dvTable`
+3. **Flood через mesh** — рассылка по всем открытым DC кроме `visited[]`
+4. **Best relay** — пир с наивысшим `score` и `relayCapable=true`
+5. **WS-сервер** — fallback
+
+Маршрутные объявления (`ROUTE_AD`) рассылаются каждые 15 сек, устаревают через 45 сек. Используется split-horizon для предотвращения петель. Поля `ttl` и `visited[]` в каждом пакете ограничивают глубину распространения.
+
+---
+
+## Безопасность
+
+| Механизм | Реализация |
+|---|---|
+| E2E шифрование | ECDH P-256 → AES-GCM-256, уникальный IV на каждое сообщение |
+| Подпись пакетов | ECDSA P-256 + SHA-256 для CALL_OFFER/ANSWER/END/ECDH_HELLO |
+| Key pinning | Отпечаток публичного ключа сохраняется при первом контакте |
+| Предупреждение | Если ключ пира изменился — UI показывает «⚠️ Key changed!» |
+| Rate limiting | 10 сообщений/сек от узла, 60/сек на сервере, 600 file-пакетов/сек |
+| Anti-spam | Дедупликация по `packet.id`, TTL, `visited[]` |
+| Транспорт | TLS (WSS) между клиентом и сервером |
+
+---
+
+## Мониторинг
+
+**Сервер `GET /health`:**
+
+```json
 {
   "status": "ok",
   "nodes": 4,
-  "uptime": 142,
+  "uptime": 3600,
   "metrics": {
-    "totalConnections": 7,
-    "totalPackets": 1842,
-    "relayedPackets": 203,
-    "droppedPackets": 12
+    "totalConnections": 28,
+    "relayedPackets": 12500,
+    "droppedPackets": 3,
+    "messagesRouted": 4200
   }
 }
 ```
 
-Server emits structured JSON logs:
-```json
-{"level":"INFO","ts":1710000000000,"msg":"node.register","nodeId":"node-a1b2c3","alias":"Alex","total":3}
-{"level":"METRIC","ts":1710000000000,"msg":"heartbeat","activeNodes":3}
-{"level":"INFO","ts":1710000000000,"msg":"relay.hop","id":"abc","from":"node-A","to":"node-D","ttl":5,"relayed":2}
-```
+**Сервер `GET /nodes`** — список активных узлов.
+
+**Клиент:** в консоли браузера доступны логи с префиксами `[ICE]`, `[RELAY]`, `[SECURITY]`, `[QoS]`, `[SIZE]`, `[FILE]`.
 
 ---
 
-## Measuring Latency
+## Документация
 
-RTT is measured via PING/PONG packets every 5 seconds:
-```typescript
-// In useMesh hook:
-client.on('rtt', (ms) => console.log('Round-trip:', ms, 'ms'));
-```
-
-Displayed live in UI on the Call screen (bottom bar: "Latency: Xms").
-
-Packet loss is estimated by tracking retry counts vs ACK receipts.
-
----
-
-## Project Structure
-
-```
-hexmesh/
-├── server/
-│   ├── index.js          ← Signaling server (Node.js + ws)
-│   └── package.json
-└── client/  (inside Expo project)
-    └── src/
-        ├── lib/
-        │   ├── MeshClient.ts   ← Core P2P engine
-        │   ├── crypto.ts       ← Ed25519 + AES-256-GCM
-        │   └── INTEGRATION.ts  ← How to wire into UI
-        └── hooks/
-            └── useMesh.ts      ← React hooks
-```
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — подробная архитектурная схема и описание всех подсистем
+- [PROTOCOL.md](./PROTOCOL.md) — спецификация пакетного протокола
+- [SECURITY.md](./SECURITY.md) — модель угроз и реализация защиты
+- [COMPARISON.md](./COMPARISON.md) — сравнение с аналогами (Signal, Briar, Meshtastic, WebRTC-реализации)
+- [TESTS.md](./TESTS.md) — методология тестирования, сценарии отказов, замеры
