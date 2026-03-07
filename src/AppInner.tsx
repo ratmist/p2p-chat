@@ -14,7 +14,7 @@ export type Screen =
   | "splash" | "discovery" | "chat"
   | "fileTransfer" | "call" | "group" | "settings";
 
-// ─── Global incoming call banner ──────────────────────────────────────────────
+
 function IncomingCallBanner({
   incomingCall,
   onAccept,
@@ -82,16 +82,16 @@ const bannerStyles = StyleSheet.create({
   btnText: { color: "white", fontSize: 16, fontWeight: "700" },
 });
 
-// ─── Inner navigator — has access to MeshContext ──────────────────────────────
+
 function AppNavigator() {
   const [currentScreen, setCurrentScreen] = useState<Screen>("splash");
   const currentScreenRef = useRef<Screen>("splash");
   const { callState, incomingCall } = useMeshContext();
 
-  // Keep ref in sync so useEffect callbacks never read stale currentScreen
+ 
   useEffect(() => { currentScreenRef.current = currentScreen; }, [currentScreen]);
 
-  // Splash → discovery
+
   useEffect(() => {
     if (currentScreen === "splash") {
       const t = setTimeout(() => setCurrentScreen("discovery"), 3000);
@@ -104,8 +104,7 @@ function AppNavigator() {
     const prev = prevCallState.current;
     prevCallState.current = callState;
 
-    // Navigate to call screen only for outgoing calls or when connected
-    // Incoming calls (ringing) stay on the current screen — the banner handles them
+   
     if (
       (callState === "calling" || callState === "connected") &&
       currentScreenRef.current !== "call"
@@ -122,15 +121,13 @@ function AppNavigator() {
     }
   }, [callState]);
 
-  // When call is accepted (ringing → connected), navigate to call screen
-  // Don't navigate on incomingCall set — that's handled by the banner only
   useEffect(() => {
     if (callState === "connected" && currentScreenRef.current !== "call") {
       setCurrentScreen("call");
     }
   }, [callState]);
 
-  // SAFETY NET overlay: show CallScreen on top only for outgoing/connected, NOT ringing
+  
   const showCallOverlay =
     (callState === "calling" || callState === "connected") &&
     currentScreen !== "call";
@@ -145,18 +142,18 @@ function AppNavigator() {
         {currentScreen === "fileTransfer" && <FileTransferScreen onNavigate={setCurrentScreen} />}
         {currentScreen === "call"         && <CallScreen onNavigate={setCurrentScreen} />}
         {currentScreen === "settings"     && <SettingsScreen onNavigate={setCurrentScreen} />}
-        {/* Outgoing/connected call overlay */}
+        {}
         {showCallOverlay && (
           <View style={StyleSheet.absoluteFill}>
             <CallScreen onNavigate={setCurrentScreen} />
           </View>
         )}
-        {/* Global incoming call banner — shown on ANY screen when ringing */}
+        {}
         {incomingCall && callState === "ringing" && currentScreen !== "call" && (
           <IncomingCallBanner
             incomingCall={incomingCall}
             onAccept={() => { setCurrentScreen("call"); }}
-            onReject={() => { /* endCall is called inside CallScreen/context */ setCurrentScreen("discovery"); }}
+            onReject={() => { setCurrentScreen("discovery"); }}
           />
         )}
       </View>
@@ -164,7 +161,7 @@ function AppNavigator() {
   );
 }
 
-// ─── Root — MeshProvider wraps the navigator so context is available ──────────
+
 export default function App() {
   return (
     <MeshProvider>
