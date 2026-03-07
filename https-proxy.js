@@ -77,12 +77,9 @@ server.listen(PROXY_PORT, '0.0.0.0', () => {
     .filter(i => i && i.family === 'IPv4' && !i.internal)
     .map(i => i.address);
 
-  console.log('\n🔒 HTTPS proxy running');
-  console.log(`   Forwarding: https:
-  console.log('\n📱 Open on iPhone (Safari):');
+
   ips.forEach(ip => console.log(`   https:
-  console.log('\n⚠️  If Safari shows cert warning → нажми "посетить этот веб-сайт"');
-  console.log('   (Already trusted from server setup — should work immediately)\n');
+  
 });
 
 server.on('error', (err) => {
@@ -93,3 +90,4 @@ server.on('error', (err) => {
   }
   process.exit(1);
 });
+
