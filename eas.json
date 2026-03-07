@@ -1,8 +1,29 @@
 {
+  "cli": {
+    "version": ">= 14.0.0"
+  },
   "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": false
+      }
+    },
     "preview-apk": {
       "distribution": "internal",
-      "buildType": "apk"
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "preview-ios": {
+      "distribution": "internal",
+      "ios": {
+        "simulator": false
+      }
+    },
+    "production": {
+      "distribution": "store"
     }
   }
 }
