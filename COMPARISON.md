@@ -25,7 +25,7 @@
 
 **Signal** — золотой стандарт безопасных мессенджеров, но требует интернета и серверов Signal Inc.
 
-| Параметр | HexMesh | Signal |
+| Параметр | MeshLink | Signal |
 |---|---|---|
 | Шифрование | ECDH P-256 + AES-GCM-256 | X3DH + Double Ratchet (AES-256-CBC + HMAC-SHA256) |
 | Forward Secrecy | ❌ (ключ сессии статичен) | ✅ (Double Ratchet — новый ключ на каждое сообщение) |
@@ -42,7 +42,7 @@
 
 **Briar** — децентрализованный мессенджер для Android с Bluetooth, Wi-Fi Direct и Tor.
 
-| Параметр | HexMesh | Briar |
+| Параметр | MeshLink | Briar |
 |---|---|---|
 | Транспорт | WebRTC + WebSocket | Bluetooth / Wi-Fi Direct / Tor |
 | iOS поддержка | ✅ | ❌ |
@@ -56,29 +56,11 @@
 
 ---
 
-## HexMesh vs Meshtastic
-
-**Meshtastic** — open-source mesh для LoRa радиомодулей (ESP32/nRF52).
-
-| Параметр | HexMesh | Meshtastic |
-|---|---|---|
-| Дальность | ~50м (Wi-Fi) | до 10км (LoRa, прямая видимость) |
-| Скорость | до 2 MB/s | ~1-5 KB/s |
-| Задержка | ~15мс | ~300-3000мс |
-| Зависимость от Wi-Fi | ✅ (нужна AP) | ❌ (радио) |
-| Шифрование | AES-GCM-256 E2E | AES-PSK (слабее) |
-| Файлы | ✅ 256 MB | ❌ (только короткий текст) |
-| Звонки | ✅ | ❌ |
-
-**Вывод:** Несравнимые ниши. Meshtastic — для дальней связи без Wi-Fi. HexMesh — для быстрого обмена в LAN.
-
----
-
-## HexMesh vs Matrix / Element
+## MeshLink vs Matrix / Element
 
 **Matrix** — федеративный протокол с homeserver.
 
-| Параметр | HexMesh | Matrix/Element |
+| Параметр | MeshLink | Matrix/Element |
 |---|---|---|
 | Без сервера | ✅ (мессенджер) | ❌ (нужен homeserver) |
 | E2E по умолчанию | ✅ | ✅ (Olm/Megolm) |
