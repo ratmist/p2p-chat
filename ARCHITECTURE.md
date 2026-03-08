@@ -4,29 +4,29 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        HexMesh Network                               │
-│                                                                       │
+│                        MeshLinkMesh Network                         │
+│                                                                     │
 │  ┌──────────┐     DataChannel (P2P)      ┌──────────┐               │
-│  │  Node A  │◄──────────────────────────▶│  Node B  │               │
+│  │  Node A  │◄──────────────────────────▶│  Node B │               │
 │  │ (laptop) │                            │ (phone)  │               │
 │  └────┬─────┘                            └────┬─────┘               │
-│       │  WebSocket (signaling+relay)          │                      │
-│       │         ┌──────────────┐              │                      │
-│       └────────▶│ HexMesh      │◄─────────────┘                      │
-│                 │ Server       │                                      │
-│                 └──────┬───────┘                                      │
-│                        │ DataChannel (mesh relay)                     │
-│                  ┌─────▼─────┐                                       │
-│                  │  Node C   │                                        │
-│                  │ (tablet)  │◄────── Node D (phone, no direct P2P)  │
-│                  └───────────┘                                        │
-│                                                                       │
-│  Приоритет доставки пакета:                                          │
-│  1 → Прямой DataChannel (P2P)                                        │
-│  2 → Distance-vector следующий хоп                                   │
-│  3 → Flood по mesh                                                   │
-│  4 → Best relay (по score)                                           │
-│  5 → WS fallback через сервер                                        │
+│       │  WebSocket (signaling+relay)          │                     │
+│       │         ┌──────────────┐              │                     │
+│       └────────▶│ MeshLink      │◄─────────────┘                    │
+│                 │ Server       │                                    │
+│                 └──────┬───────┘                                    │
+│                        │ DataChannel (mesh relay)                   │
+│                  ┌─────▼─────┐                                      │
+│                  │  Node C   │                                      │
+│                  │ (tablet)  │◄────── Node D (phone, no direct P2P) │
+│                  └───────────┘                                      │
+│                                                                     │
+│  Приоритет доставки пакета:                                         │
+│  1 → Прямой DataChannel (P2P)                                       │
+│  2 → Distance-vector следующий хоп                                  │
+│  3 → Flood по mesh                                                  │
+│  4 → Best relay (по score)                                          │
+│  5 → WS fallback через сервер                                       │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
